@@ -1,0 +1,26 @@
+# Stage 1: Build stage
+FROM node:20-alpine AS build
+
+USER root
+
+# Skip downloading Chromium during build (if using Puppeteer or similar)
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+
+# Install Prax globally (replace with actual version when pinned, e.g. prax@0.1.0)
+RUN npm install -g prax
+
+# Stage 2: Runtime stage
+FROM node:20-alpine
+
+# Install runtime dependencies for headless browsers and native modules
+RUN apk add --no-cache chromium git python3 py3-pip make g++ build-base cairo-dev pango-dev curl
+
+# Set Chromium path if needed by Puppeteer or related packages
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
+# Copy Prax from build stage
+COPY --from=build /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=build /usr/local/bin /usr/local/bin
+
+# Start Prax
+ENTRYPOINT ["prax", "start"]
