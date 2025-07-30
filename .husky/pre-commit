@@ -1,0 +1,9 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "Running Prax pre-commit checks..."
+
+pnpm format:quick       # Format files (Prettier)
+pnpm lint:staged        # Lint staged files (ESLint + formatting)
+
+echo "Prax pre-commit checks complete."
