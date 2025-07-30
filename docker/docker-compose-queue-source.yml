@@ -1,0 +1,65 @@
+version: '3.1'
+
+services:
+  redis:
+    image: redis:alpine
+    container_name: prax-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - prax-net
+
+  prax:
+    container_name: prax-main
+    build:
+      context: .. # Uses Dockerfile at project root
+      dockerfile: docker/Dockerfile
+    ports:
+      - '${PORT}:${PORT}'
+    volumes:
+      - ../.prax:/root/.prax
+    environment:
+      - PORT=${PORT:-3000}
+      - DATABASE_PATH=/root/.prax
+      - SECRETKEY_PATH=/root/.prax
+      - LOG_PATH=/root/.prax/logs
+      - BLOB_STORAGE_PATH=/root/.prax/storage
+      - MODE=queue
+      - QUEUE_NAME=prax-queue
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    networks:
+      - prax-net
+
+  prax-worker:
+    container_name: prax-worker
+    build:
+      context: .. # Uses worker Dockerfile
+      dockerfile: docker/worker/Dockerfile
+    volumes:
+      - ../.prax:/root/.prax
+    environment:
+      - WORKER_PORT=${WORKER_PORT:-5566}
+      - DATABASE_PATH=/root/.prax
+      - SECRETKEY_PATH=/root/.prax
+      - LOG_PATH=/root/.prax/logs
+      - BLOB_STORAGE_PATH=/root/.prax/storage
+      - MODE=queue
+      - QUEUE_NAME=prax-queue
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+      - prax
+    networks:
+      - prax-net
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  prax-net:
+    driver: bridge
