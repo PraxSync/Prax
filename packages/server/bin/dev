@@ -1,0 +1,21 @@
+#!/usr/bin/env node
+
+const { run, flush, Errors, settings } = require('@oclif/core')
+const path = require('path')
+
+// Load Prax TypeScript config
+const project = path.join(__dirname, '..', 'tsconfig.json')
+
+// Always dev mode for this entry
+process.env.NODE_ENV = 'development'
+
+// Use ts-node in dev
+require('ts-node').register({ project })
+
+// Prax dev: always show stack traces
+settings.debug = true
+
+// Start Prax CLI
+run()
+  .then(flush)
+  .catch(Errors.handle)
